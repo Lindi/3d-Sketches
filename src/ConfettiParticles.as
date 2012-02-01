@@ -1,6 +1,6 @@
 package
 {
-	import com.madsystems.components._3d.Camera;
+	import _3d.Camera;
 	
 	import flash.display.GraphicsPathWinding;
 	import flash.display.Sprite;
@@ -42,7 +42,7 @@ package
 			_camera.position = new Vector3D( );
 			_camera.position.x = 0 ;//+ int( Math.random() * 200 ) ;
 			_camera.position.y = 0;//-100 + int( Math.random() * 200 ) ;
-			_camera.position.z = 250;//100 + int( Math.random() * 200 ) ;
+			_camera.position.z = 500;//100 + int( Math.random() * 200 ) ;
 			_camera.position.w = 1 ;
 			_camera.width = 400 ;
 			_camera.height = 400 ;

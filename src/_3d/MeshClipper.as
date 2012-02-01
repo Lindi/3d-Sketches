@@ -1,4 +1,4 @@
-package com.madsystems.components._3d
+package _3d
 {
 	import math.Plane;
 	

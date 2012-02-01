@@ -1,6 +1,6 @@
 package 
 { 
-	import com.madsystems.components._3d.Frustum;
+	import _3d.Frustum;
 	import geometry.Plane;
 	
 	import flash.display.Shape;

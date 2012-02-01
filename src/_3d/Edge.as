@@ -1,22 +1,20 @@
-package com.madsystems.components._3d
+package _3d
 {
-	public class Triangle
-	{
-		public var index:Array = new Array(3) ;
-		public var edges:Array = new Array(3);
+	public class Edge {
+		
+		public var index:Array = new Array(2);
 		public var visible:Boolean = true ;
 		
-		public function Triangle(a:int, b:int, c:int)
-		{
+		public function Edge( a:int, b:int ) {
 			index[0] = a ;
 			index[1] = b ;
-			index[2] = c ;
-		}
-		public function clone():Triangle {
-			return new Triangle( index[0], index[1], index[2] );
 		}
 		public function toString():Object {
 			return index.toString();
+		}
+		
+		public function clone():Edge {
+			return new Edge( index[0], index[1] );
 		}
 		public function valueOf():Object {			
 			var val:int = 0 ;

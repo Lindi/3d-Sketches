@@ -1,4 +1,4 @@
-package com.madsystems.components._3d
+package _3d
 {
 	import flash.geom.Matrix3D;
 	import flash.geom.Vector3D;
@@ -210,11 +210,74 @@ package com.madsystems.components._3d
 			{
 				var plane:Plane = _planes[i] ;
 				var distance:Number = plane.test( point );
-				//trace( i, distance, point );
 				if ( distance < 0 )
 					return false ;
 			}
 			return true ;
+		}
+		
+		/**
+		 * Clips the line segment against the frustum planes
+		 * If both points are outside all the planes, we return null
+		 * Otherwise, we return a vector of two points. 
+		 * @param a
+		 * @param b
+		 * 
+		 */		
+		public function clip( a:Vector3D, b:Vector3D ):Vector.<Vector3D>
+		{
+			var result:Vector.<Vector3D> = new Vector.<Vector3D>(2,true);
+			for ( var i:int = 0; i < _planes.length; i++ )
+			{
+				var plane:Plane = _planes[i] ;
+				var adistance:Number = plane.test( a );
+				var bdistance:Number = plane.test( b );
+				if (!( adistance > 0 && bdistance > 0 ))
+				{
+					break ;
+				}
+			}	
+			if ( adistance < 0 && bdistance < 0 )
+			{
+				//	If they're both outside the plane, return nothing
+				return null ;
+			}
+
+			if ( i == _planes.length )
+			{
+				//	If they're both inside the plane, return the same points
+				result[0] = a ;
+				result[1] = b ;
+				
+			} else if ( adistance > 0 && bdistance < 0 )
+			{
+				//	b is outside the plane, so replace b
+				var bca:Number = bc( a, plane ) ;
+				var bcb:Number = bc( b, plane ) ;
+				var d:Vector3D = a.subtract( b ) ;
+				var t:Number = bca / ( bcb - bca ) ;
+				d.scaleBy( t ) ;
+				result[0] = a.add( d ) ;
+				result[1] = b ;
+				
+			} else if ( adistance < 0 && bdistance > 0 )
+			{
+				//	a is outside the plane, so replace a 
+				bca = bc( a, plane ) ;
+				bcb = bc( b, plane ) ;
+				d = b.subtract( a ) ;
+				t = bca / ( bcb - bca ) ;
+				d.scaleBy( t ) ;
+				result[0] = b.add( a ) ;
+				result[1] = b ;
+			}
+			return result ;
+		}
+		
+		
+		private function bc( p:Vector3D, plane:Plane ):Number
+		{
+			return plane.a * p.x + plane.b * p.y + plane.c * p.z + plane.d ;	
 		}
 
 		/**
