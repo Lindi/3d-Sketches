@@ -29,13 +29,14 @@ package
 			//	Create a collection of points and line segments
 			_points = new Vector.<Vector3D>();
 			_currentLineSegmentPoints = new Vector.<Vector3D>(2,true);
+			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = 0 ;
 			_camera.position.y = 0 ;
-			_camera.position.z = 500 ;
+			_camera.position.z = 0 ;
 			_camera.position.w = 1 ;
 			_camera.width = 400 ;
 			_camera.height = 400 ;
@@ -97,6 +98,7 @@ package
 				if ( !Utils.IsZero( c.dotProduct( line )))
 					return c ;
 			}
+			return null ;
 		}
 		
 		private function createNewLineSegment( ):int
@@ -134,11 +136,11 @@ package
 		{
 			if ( _index == 0 )
 			{
-				_currentSegment = createNewLineSegment( ) ;
+				_currentLineSegment = createNewLineSegment( ) ;
 			}
 			//	Take the vector defined by newSegment[1] - newSegment[0] 
 			//	and rotate it around the current axis every 50 frames
-			var t:Number = (( _index++ % 50 )/50.0 );
+			var t:Number = (( _index++ % 20 )/20.0 );
 			
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
@@ -172,13 +174,14 @@ package
 			//	Create
 			//	Modify the current segment
 			var v:Vector3D = new Vector3D( product.x, product.y, product.z ) ;
-			var w:Vector3D =  a.add( v.scaleBy( 20 ));
-			var q:Vector3D = _points[_lineSegments[_currentLineSegment]][1] ;
+			v.scaleBy( 20 ) ;
+			var w:Vector3D =  a.add( v);
+			var q:Vector3D = _points[_lineSegments[_currentLineSegment][1]] ;
 			q.x = w.x ; q.y = w.y ; q.z = w.z ;
 			
 			//	Iterate over the confetti and compute their projections
 			var worldUp:Vector3D = Vector3D.Y_AXIS.clone();
-			worldUp.negate() ;
+			//worldUp.negate() ;
 			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( q.x, q.y, q.z, 1), worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
@@ -203,18 +206,18 @@ package
 					//	Add the transformed points to the collection
 					//	of transformed points
 					a = clip[0] ;
-					transformedPoints.push( a ) ;
 					b = clip[1] ;
-					transformedPoints.push( b ) ;
 					
 					a = projection.transform( a );
 					a.project();
 					a.w = 1 ;
 					a = screenTransform.transform( a ) ;
+					transformedPoints.push( a ) ;
 					b = projection.transform( b );
 					b.project();
 					b.w = 1 ;
 					b = screenTransform.transform( b ) ;
+					transformedPoints.push( b ) ;
 				}
 			}
 			
@@ -227,29 +230,13 @@ package
 				a = transformedPoints[j] ;
 				b = transformedPoints[j+1] ;
 				graphics.beginFill( 0x000000 ) ;
-				graphics.drawCircle( a.x, a.y, 2 ) ;
-				graphics.drawCircle( a.x, a.y, 2 ) ;
+				graphics.drawCircle( a.x, a.y, 1 ) ;
+				graphics.drawCircle( b.x, b.y, 1 ) ;
 				graphics.endFill() ;
 				graphics.lineStyle( 1, 0x000000 ) ;
 				graphics.moveTo( a.x, a.y );
 				graphics.lineTo( b.x, b.y ) ;
 			}
-
-			
-			//	Now we need to create a new line segment from the old one
-			//	How do we do that?  We take the cross product of the two points that define the line
-			//	segment.  That vector represents the line between the two points.  
-			//	Then, we find a random point that's not on that line segment; which is to say
-			//	we find a random point whose dot product with the line is non-zero
-			
-			//	After that, we take the cross product of the two vectors defined by the
-			//	three points we now have (the two points in the original line segment,
-			//	plus the new point we've just found).  This vector is perpendicular to the original
-			//	line segment, and is a valid axis of rotation
-			
-			//	Then, we rotate a copy of the original line segment around our axis of rotation
-			
-			//	... rinse and repeat
 		}
 	}
 }
