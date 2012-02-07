@@ -192,9 +192,9 @@ package _3d
 			plane = new Plane();
 			plane.setCoefficients( 0, 0, 1, -_near  );
 			_planes.push( plane ) ;
-//			//	Far plane
-//			_planes[5] = new Plane();
-//			_planes[5].setCoefficients( 0, 0, -1, _far );
+			//	Far plane
+			_planes[5] = new Plane();
+			_planes[5].setCoefficients( 0, 0, -1, _far );
 		}
 		
 		/**
@@ -236,7 +236,8 @@ package _3d
 				{
 					break ;
 				}
-			}	
+			}
+			
 			if ( adistance < 0 && bdistance < 0 )
 			{
 				//	If they're both outside the plane, return nothing
@@ -266,7 +267,7 @@ package _3d
 				bca = bc( a, plane ) ;
 				bcb = bc( b, plane ) ;
 				d = b.subtract( a ) ;
-				t = bca / ( bcb - bca ) ;
+				t = bcb / ( bca - bcb ) ;
 				d.scaleBy( t ) ;
 				result[0] = b.add( a ) ;
 				result[1] = b ;
@@ -310,7 +311,6 @@ package _3d
 				_screen.data[10] = .5;
 				_screen.data[14] = .5;
 				_screen.data[15] = 1 ;
-				
 			}
 			return _screen ;
 		}
@@ -335,13 +335,12 @@ package _3d
 			//	We have to make sure that our camera direction vector
 			//	is never parallel with the world up vector to ensure
 			//	that we can always compute a set of orthonomral basis vectors
-			_side =  _direction.crossProduct( worldUp );
-			_side.normalize();
-			//side.negate();
+			var d:Vector3D = _direction.clone() ;
+			d.scaleBy( worldUp.dotProduct( d ));
+			_up = worldUp.subtract( d ) ;
 			
 			//	Compute the up vector component of the orthonormal basis vectors
-			_up =  _side.crossProduct( _direction );
-			_up.normalize();
+			_side = _up.crossProduct( _direction ) ;
 			
 			//	When computing the view-to-world transform matrix, you set
 			//	the first column of the matrix to the side or right vector,
@@ -357,7 +356,9 @@ package _3d
 			//	oriented along the negative z-axis (Open-GL convention)
 			//_direction.negate() ;
 			var rotate:Matrix3x3 = new Matrix3x3();
-			rotate.setRows( _side, _up, _direction );
+			d = _direction.clone() ;
+			//d.negate() ;
+			rotate.setRows( _side, _up, d );
 			
 			//	World->view translation
 			var translation:Vector3D = rotate.transform( _eye ) ;

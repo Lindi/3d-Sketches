@@ -11,6 +11,7 @@ package
 	import math.Matrix4x4;
 	import math.Utils;
 
+	[SWF(backgroundColor='#ffffff', width='400', height='400')]
 	public class LeWitt extends Sprite
 	{
 		private var _lineSegments:Vector.<Vector.<int>> ;
@@ -19,7 +20,13 @@ package
 		private var _currentLineSegmentPoints:Vector.<Vector3D> ;  
 		private var _currentAxis:Vector3D ;
 		private var _index:int ;
+		private var _count:int ;
 		private var _camera:Camera ;
+		private var _worldUp:Vector3D ;
+		private static const SEGMENT_LENGTH:int = 20 ;
+		private static const RADIANS:Number = Math.PI / 180 ;
+		private static const COSINE_RADIANS:Number = Math.cos( RADIANS ) ;
+		private static const SINE_RADIANS:Number = Math.sin( RADIANS ) ;
 
 
 		public function LeWitt()
@@ -40,12 +47,14 @@ package
 			_camera.position.w = 1 ;
 			_camera.width = 400 ;
 			_camera.height = 400 ;
-			_camera.setPerspective( 50, _camera.width/_camera.height, 20, 1000 ) ; 
+			_camera.setPerspective( 65, _camera.width/_camera.height, 10, 200 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
 			createLineSegment();
 			addEventListener( Event.ENTER_FRAME, frame ) ;
+			_worldUp = Vector3D.Z_AXIS.clone();
+			_worldUp.negate() ;
 		}
 		
 		/**
@@ -57,7 +66,7 @@ package
 		{
 			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
 			var a:Vector3D = getRandomPoint( 100 );
-			lineSegment[0] = _points.push(a) -1;
+			lineSegment[0] = _points.push(a) - 1;
 			var b:Vector3D = getRandomPoint( 100 );	
 			b.normalize() ;
 			b.scaleBy( 20 ) ;
@@ -94,7 +103,7 @@ package
 			var line:Vector3D = a.crossProduct( b ) ;
 			while ( true )
 			{
-				var c:Vector3D = getRandomPoint( 20 );
+				var c:Vector3D = getRandomPoint( SEGMENT_LENGTH );
 				if ( !Utils.IsZero( c.dotProduct( line )))
 					return c ;
 			}
@@ -114,13 +123,18 @@ package
 			//	Take the cross product of ( b - a ) and ( c - a )
 			//	That's the axis around which we'll rotate a new line segment
 			_currentAxis = ( b.subtract( a )).crossProduct( c.subtract( a ));
+			if ( _count % 2 )
+			{
+				_currentAxis = _currentAxis.crossProduct( b.subtract( a ));
+				_currentAxis.negate() ;
+			}
 			_currentAxis.normalize();
 			
 			//	Create a new line segment from the points of the current line segment
 			var index:int = Math.floor( Math.random() * 2 );
 			var newSegment:Vector.<int> = new Vector.<int>(2,true);
 			newSegment[0] = lineSegment[index]; 
-			newSegment[1] = _points.push( _points[lineSegment[(index + 1) % 2]]) -1 ; 
+			newSegment[1] = _points.push( _points[lineSegment[(index + 1) % 2]].clone()) -1 ; 
 			_currentLineSegmentPoints[0] = _points[newSegment[0]].clone();
 			_currentLineSegmentPoints[1] = _points[newSegment[1]].clone();
 			return _lineSegments.push(newSegment)-1;
@@ -136,11 +150,13 @@ package
 		{
 			if ( _index == 0 )
 			{
+				_count++ ;
 				_currentLineSegment = createNewLineSegment( ) ;
 			}
 			//	Take the vector defined by newSegment[1] - newSegment[0] 
 			//	and rotate it around the current axis every 50 frames
-			var t:Number = (( _index++ % 20 )/20.0 );
+			var t:Number = (_index++)/SEGMENT_LENGTH ;
+			_index %= SEGMENT_LENGTH ;
 			
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
@@ -158,6 +174,8 @@ package
 			var b:Vector3D = _currentLineSegmentPoints[1] ;
 			var d:Vector3D = b.subtract( a ) ;
 			d.normalize();
+			
+
 			
 			//	Create a quaternion from this vector, and transform it
 			//	by the interpolated quaterion (should refactor this into a function)
@@ -179,10 +197,22 @@ package
 			var q:Vector3D = _points[_lineSegments[_currentLineSegment][1]] ;
 			q.x = w.x ; q.y = w.y ; q.z = w.z ;
 			
+			d.scaleBy( SEGMENT_LENGTH * t ) ;
+			var foo:Vector3D = a.add( d);
+			
+//			_camera.position.x = foo.x + _currentAxis.x * SEGMENT_LENGTH ;
+//			_camera.position.y = foo.y + _currentAxis.y * SEGMENT_LENGTH ;
+//			_camera.position.z = foo.z + _currentAxis.z * SEGMENT_LENGTH ;
+			
+//			var angle:Number = 1 * RADIANS ;
+//			var x:Number = _camera.position.x ;
+//			var z:Number = _camera.position.z ;
+//			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
+//			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+			
+			
 			//	Iterate over the confetti and compute their projections
-			var worldUp:Vector3D = Vector3D.Y_AXIS.clone();
-			//worldUp.negate() ;
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( q.x, q.y, q.z, 1), worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( q.x, q.y, q.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
@@ -203,11 +233,11 @@ package
 				var clip:Vector.<Vector3D> = _camera.clip( a, b ) ;
 				if ( clip != null )
 				{
+					//	TODO: Clip the points as well
 					//	Add the transformed points to the collection
 					//	of transformed points
 					a = clip[0] ;
-					b = clip[1] ;
-					
+					b = clip[1] ;				
 					a = projection.transform( a );
 					a.project();
 					a.w = 1 ;
