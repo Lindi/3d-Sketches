@@ -12,7 +12,7 @@ package
 	import math.Utils;
 
 	[SWF(backgroundColor='#ffffff', width='400', height='400')]
-	public class LeWitt extends Sprite
+	public class LookAt extends Sprite
 	{
 		private var _lineSegments:Vector.<Vector.<int>> ;
 		private var _points:Vector.<Vector3D> ;
@@ -29,7 +29,7 @@ package
 		private static const SINE_RADIANS:Number = Math.sin( RADIANS ) ;
 
 
-		public function LeWitt()
+		public function LookAt()
 		{
 			super();
 			
@@ -43,17 +43,18 @@ package
 			_camera.position = new Vector3D( );
 			_camera.position.x = 0 ;
 			_camera.position.y = 0 ;
-			_camera.position.z = -500 ;
+			_camera.position.z = -100 ;
 			_camera.position.w = 1 ;
 			_camera.width = 400 ;
 			_camera.height = 400 ;
-			_camera.setPerspective( 65, _camera.width/_camera.height, 10, 200 ) ; 
+			_camera.setPerspective( 65, _camera.width/_camera.height, 10, 10000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
 			createLineSegment();
 			addEventListener( Event.ENTER_FRAME, frame ) ;
 			_worldUp = Vector3D.Y_AXIS.clone();
+			//_worldUp.negate() ;
 		}
 		
 		/**
@@ -64,11 +65,11 @@ package
 		private function createLineSegment( ):int
 		{
 			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-			var a:Vector3D = getRandomPoint( 100 );
+			var a:Vector3D = new Vector3D( 0, 0, -200, 1 ) ; //getRandomPoint( 100 );
 			lineSegment[0] = _points.push(a) - 1;
-			var b:Vector3D = getRandomPoint( 100 );	
-			b.normalize() ;
-			b.scaleBy( 20 ) ;
+			var b:Vector3D = new Vector3D( 100, 0, -200, 1 ) ; //getRandomPoint( 100 );	
+//			b.normalize() ;
+//			b.scaleBy( 20 ) ;
 			lineSegment[1] = _points.push(a.add( b ))-1;
 			return _lineSegments.push(lineSegment);
 		}
@@ -84,7 +85,6 @@ package
 			p.x = Math.random() * scale ;
 			p.y = Math.random() * scale ;
 			p.z = Math.random() * scale ;
-			p.w = 1 ;
 			return p ;
 		}
 		
@@ -148,71 +148,54 @@ package
 		 */		
 		private function frame( event:Event ):void
 		{
-			if ( _index == 0 )
-			{
-				_count++ ;
-				_currentLineSegment = createNewLineSegment( ) ;
-			}
-			//	Take the vector defined by newSegment[1] - newSegment[0] 
-			//	and rotate it around the current axis every 50 frames
-			var t:Number = (_index++)/SEGMENT_LENGTH ;
-			_index %= SEGMENT_LENGTH ;
+//			if ( _index == 0 )
+//			{
+//				_count++ ;
+//				_currentLineSegment = createNewLineSegment( ) ;
+//			}
+//			//	Take the vector defined by newSegment[1] - newSegment[0] 
+//			//	and rotate it around the current axis every 50 frames
+//			var t:Number = (_index++)/SEGMENT_LENGTH ;
+//			_index %= SEGMENT_LENGTH ;
 			
-			//	It'd be smarter to create these once per
-			//	line segment in the createNewLineSegment handler
-			var from:Quaternion = new Quaternion();
-			from.SetAxisAngle( _currentAxis, 0 );
-			var to:Quaternion = new Quaternion();
-			to.SetAxisAngle( _currentAxis, Math.PI / 2 );
+			//	Given a line segment, find a vector that's perpendicular to the segment
+			var lineSegment:Vector.<int> = _lineSegments[_currentLineSegment] ;
 			
-			//	Interpolate using slerp
-			var quaternion:Quaternion = Quaternion.Slerp( from, to, t );
+//			//	First, find a random point that's not on the line segment
+			var a:Vector3D = _points[lineSegment[0]] ;
+			var b:Vector3D = _points[lineSegment[1]] ;
 			
-			//	Grab the points of the current line segment, and calculate
-			//	the vector obtained by subtracting b from a
-			var a:Vector3D = _currentLineSegmentPoints[0] ;
-			var b:Vector3D = _currentLineSegmentPoints[1] ;
-			var d:Vector3D = b.subtract( a ) ;
-			d.normalize();
-			
-
-			
-			//	Create a quaternion from this vector, and transform it
-			//	by the interpolated quaterion (should refactor this into a function)
-			//	Here's a problem though.  If we modify the endpoint of the line
-			//	segment, we're going to end up interpolating a modified point.
-			//	We don't want to do this, so we should create a duplicate of the
-			//	current segment's enpoint and store it somewhere
-			var vector:Quaternion = new Quaternion( 0, d.x, d.y, d.z );
-			var inverse:Quaternion = quaternion.Inverse();
-			var product:Quaternion = vector.Multiply( inverse ) ;
-			product = quaternion.Multiply( product ) ;
-			
-			
-			//	Create
-			//	Modify the current segment
-			var v:Vector3D = new Vector3D( product.x, product.y, product.z ) ;
-			v.scaleBy( SEGMENT_LENGTH ) ;
-			var w:Vector3D =  a.add( v);
-			var q:Vector3D = _points[_lineSegments[_currentLineSegment][1]] ;
-			q.x = w.x ; q.y = w.y ; q.z = w.z ;
-			
-			d.scaleBy( SEGMENT_LENGTH * t ) ;
-			var foo:Vector3D = a.add( d);
-			
-//			_camera.position.x = q.x + _currentAxis.x * SEGMENT_LENGTH ;
-//			_camera.position.y = q.y + _currentAxis.y * SEGMENT_LENGTH ;
-//			_camera.position.z = q.z + _currentAxis.z * SEGMENT_LENGTH ;
-			
-			var angle:Number = 1 * RADIANS ;
-			var x:Number = _camera.position.x ;
-			var z:Number = _camera.position.z ;
-			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+//			var p:Vector3D = b.subtract( a ) ;
+//			p = p.crossProduct( _worldUp );
+//			p.normalize() ;
+//			
+//			//	It'd be smarter to create these once per
+//			//	line segment in the createNewLineSegment handler
+//			var from:Quaternion = new Quaternion();
+//			from.SetAxisAngle( _currentAxis, 0 );
+//			var to:Quaternion = new Quaternion();
+//			to.SetAxisAngle( _currentAxis, Math.PI / 4);
+//			
+//			//	Interpolate using slerp
+//			var quaternion:Quaternion = Quaternion.Slerp( from, to, t );
+//			
+//			//	Create a quaternion from this vector, and transform it
+//			//	by the interpolated quaterion (should refactor this into a function)
+//			//	Here's a problem though.  If we modify the endpoint of the line
+//			//	segment, we're going to end up interpolating a modified point.
+//			//	We don't want to do this, so we should create a duplicate of the
+//			//	current segment's enpoint and store it somewhere
+//			var vector:Quaternion = new Quaternion( 0, p.x, p.y, p.z );
+//			var inverse:Quaternion = quaternion.Inverse();
+//			var product:Quaternion = vector.Multiply( inverse ) ;
+//			product = quaternion.Multiply( product ) ;
+//			p = new Vector3D( product.x, product.y, product.z );
+//			p.scaleBy( SEGMENT_LENGTH );
+//			_camera.position = p.add( a );
 			
 			
-			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( q.x, q.y, q.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+			
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( a.x, a.y, a.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
@@ -223,7 +206,7 @@ package
 			for ( var j:int = 0; j < _lineSegments.length; j++ )
 			{
 				//	Grab the current line segment
-				var lineSegment:Vector.<int> = _lineSegments[j] ;
+				lineSegment = _lineSegments[j] ;
 				a = _points[lineSegment[0]].clone() ;
 				b = _points[lineSegment[1]].clone() ;
 				a = worldToView.transform( a ) ;
@@ -233,9 +216,6 @@ package
 				var clip:Vector.<Vector3D> = _camera.clip( a, b ) ;
 				if ( clip != null )
 				{
-					//	TODO: Clip the points as well
-					//	Add the transformed points to the collection
-					//	of transformed points
 					a = clip[0] ;
 					b = clip[1] ;	
 					a = projection.transform( a );
@@ -254,20 +234,18 @@ package
 			//	 Draw all the line segments
 			//	The number of transformed points should always be even
 			graphics.clear(); 
-			graphics.lineStyle( undefined ) ;
 			for ( j = 0; j < transformedPoints.length; j+= 2 )
 			{
 				a = transformedPoints[j] ;
 				b = transformedPoints[j+1] ;
-				if ( j < length-1 )
-					graphics.beginFill( 0x000000 ) ;
-				else graphics.beginFill( 0xff0000 );
-				graphics.drawCircle( a.x, a.y, 1 ) ;
-				graphics.drawCircle( b.x, b.y, 1 ) ;
-				graphics.endFill() ;
 				graphics.lineStyle( 1, 0x000000 ) ;
 				graphics.moveTo( a.x, a.y );
 				graphics.lineTo( b.x, b.y ) ;
+				graphics.lineStyle( undefined ) ;
+				graphics.beginFill( 0xff0000 );
+				graphics.drawCircle( a.x, a.y, 1 ) ;
+				graphics.drawCircle( b.x, b.y, 1 ) ;
+				graphics.endFill() ;
 			}
 		}
 	}
