@@ -53,8 +53,7 @@ package
 			//	Start by creating a line segment
 			createLineSegment();
 			addEventListener( Event.ENTER_FRAME, frame ) ;
-			_worldUp = Vector3D.Y_AXIS.clone();
-			//_worldUp.negate() ;
+			_worldUp = Vector3D.X_AXIS.clone();
 		}
 		
 		/**

@@ -40,12 +40,12 @@ package
 			//	Make a new camera
 			_camera = new Camera( );
 			_camera.position = new Vector3D( );
-			_camera.position.x = 0 ;//+ int( Math.random() * 200 ) ;
-			_camera.position.y = 0;//-100 + int( Math.random() * 200 ) ;
-			_camera.position.z = 500;//100 + int( Math.random() * 200 ) ;
+			_camera.position.x = 0 ;
+			_camera.position.y = 0;
+			_camera.position.z = 500;
 			_camera.position.w = 1 ;
-			_camera.width = 400 ;
-			_camera.height = 400 ;
+			_camera.width  = stage.stageWidth ;
+			_camera.height = stage.stageHeight ;
 			_camera.setPerspective( 50, _camera.width/_camera.height, 20, 1000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
@@ -63,8 +63,6 @@ package
 		{
 			//	Create a list for z-sorting
 			var sort:Array = new Array();
-			var worldUp:Vector3D = Vector3D.Y_AXIS.clone();
-			worldUp.negate() ;
 			
 			//	Use the camera to move the camera up and down
 			//	in the y direction
@@ -76,25 +74,26 @@ package
 			var angle:Number = 1 * RADIANS ;
 			var x:Number = _camera.position.x ;
 			var z:Number = _camera.position.z ;
-			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
-			_camera.position.y = y ;
+			_camera.position.z = COSINE_RADIANS * z - SINE_RADIANS * x;
+			_camera.position.x = COSINE_RADIANS * x + SINE_RADIANS * z;
 			_camera.position.w = 1 ;
 			
+			//	Make sure the world up vector is always perpendicular to
+			//	the direction vector
+			var worldUp:Vector3D = new Vector3D( -_camera.position.z, 0, _camera.position.x ) ;
+			worldUp.normalize() ;
 			
 			//	Iterate over the confetti and compute their projections
-	 		var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 150, 0, 1), worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+	 		var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 200, 0, 1), worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			for ( var i:int = 0; i < _confetti.length; i++)
 			{
 				//	Grab a reference to the automaton
 				var confetti:Confetti = _confetti[ i ]  ;
-				x = confetti.position.x ;
-				z = confetti.position.z ;
-				var velocity:int = int( confetti.velocity * 2 );
-				confetti.position.x = confetti.COSINE_OMEGA * x - confetti.SINE_OMEGA * z;
-				confetti.position.z = confetti.COSINE_OMEGA * z + confetti.SINE_OMEGA * x;
+ 				var velocity:int = int( confetti.velocity * 2 );
+//				confetti.position.x = confetti.COSINE_OMEGA * x - confetti.SINE_OMEGA * z;
+//				confetti.position.z = confetti.COSINE_OMEGA * z + confetti.SINE_OMEGA * x;
 				confetti.position.y -= confetti.velocity ;
 				if ( confetti.position.y < 0 )
 				{
@@ -143,9 +142,9 @@ package
 		
 		private function setPosition( confetti:Confetti ):void
 		{
-			confetti.position.x = -10 + int( Math.random() * 20 ) ;
+			confetti.position.x = -50 + int( Math.random() * 100 ) ;
 			confetti.position.y = 100 + int( Math.random() * 200 ) ;
-			confetti.position.z = -10 + int( Math.random() * 20 ) ;
+			confetti.position.z = -50 + int( Math.random() * 100 ) ;
 			confetti.position.w = 1 ;
 		}
 		
@@ -173,19 +172,19 @@ package
 //						( color == 2 ? 0xB2BDBD :
 //							( color == 3 ? 0xCDCEB0 : 0x000000 ))));
 			
-			//	Pink Confetti (Luli)
-			var color:int = int( Math.random() * 4 );
-			confetti.color = 
-				( color == 0 ? 0xBCBBA5 : 
-					( color == 1 ? 0xFF86A6 : 
-						( color == 2 ? 0xFFD8D9 : 0xFFF2ED )));
-			
-//			//	Marc Jacobs
+//			//	Pink Confetti (Luli)
 //			var color:int = int( Math.random() * 4 );
 //			confetti.color = 
-//				( color == 0 ? 0xF21B6A : 
-//					( color == 1 ? 0x41C0F2 : 
-//						( color == 2 ? 0x027353 : 0xD9CB04 )));
+//				( color == 0 ? 0xBCBBA5 : 
+//					( color == 1 ? 0xFF86A6 : 
+//						( color == 2 ? 0xFFD8D9 : 0xFFF2ED )));
+			
+			//	Marc Jacobs
+			var color:int = int( Math.random() * 4 );
+			confetti.color = 
+				( color == 0 ? 0xF21B6A : 
+					( color == 1 ? 0x41C0F2 : 
+						( color == 2 ? 0x027353 : 0xD9CB04 )));
 
 			//			//	Winter
 //			var color:int = int( Math.random() * 5 );
@@ -230,7 +229,6 @@ package
 				coordinates[ i++ ] = vector.x ;
 				coordinates[ i++ ] = vector.y ;
 			}
-			
 			graphics.beginFill( color, .9 );	
 			graphics.drawPath( commands, coordinates, GraphicsPathWinding.NON_ZERO );
 			graphics.endFill();

@@ -43,17 +43,17 @@ package
 			_camera.position = new Vector3D( );
 			_camera.position.x = 0 ;
 			_camera.position.y = 0 ;
-			_camera.position.z = -500 ;
+			_camera.position.z = -100 ;
 			_camera.position.w = 1 ;
 			_camera.width = 400 ;
 			_camera.height = 400 ;
-			_camera.setPerspective( 65, _camera.width/_camera.height, 10, 200 ) ; 
+			_camera.setPerspective( 50, _camera.width/_camera.height, 40, 2000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
 			createLineSegment();
 			addEventListener( Event.ENTER_FRAME, frame ) ;
-			_worldUp = Vector3D.Y_AXIS.clone();
+			//_worldUp = Vector3D.Y_AXIS.clone();
 		}
 		
 		/**
@@ -209,6 +209,9 @@ package
 			var z:Number = _camera.position.z ;
 			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
 			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+			_camera.position.w = 1 ;
+			_worldUp = new Vector3D( -_camera.position.z, 0, _camera.position.x ) ;
+			_worldUp.normalize() ;
 			
 			
 			//	Iterate over the confetti and compute their projections
