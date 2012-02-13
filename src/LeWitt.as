@@ -178,8 +178,6 @@ package
 			var d:Vector3D = b.subtract( a ) ;
 			d.scaleBy( 1/SEGMENT_LENGTH );
 			
-
-			
 			//	Create a quaternion from this vector, and transform it
 			//	by the interpolated quaterion (should refactor this into a function)
 			//	Here's a problem though.  If we modify the endpoint of the line
@@ -200,16 +198,13 @@ package
 			var w:Vector3D = v.add( q );
 			v.x = w.x ; v.y = w.y ; v.z = w.z ;
 			
-			_camera.position.x = v.x + axis.x * SEGMENT_LENGTH ;
-			_camera.position.y = v.y + axis.y * SEGMENT_LENGTH ;
-			_camera.position.z = v.z + axis.z * SEGMENT_LENGTH ;
-			
-//			var angle:Number = 1 * RADIANS ;
-//			var x:Number = _camera.position.x ;
-//			var z:Number = _camera.position.z ;
-//			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-//			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
-//			_camera.position.w = 1 ;
+			//	Rotate the camera around the current point
+			var angle:Number = 1 * RADIANS ;
+			var x:Number = _camera.position.x ;
+			var z:Number = _camera.position.z ;
+			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
+			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+			_camera.position.w = 1 ;
 			_worldUp = new Vector3D( -_camera.position.z, 0, _camera.position.x ) ;
 			_worldUp.normalize() ;
 			
