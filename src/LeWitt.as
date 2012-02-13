@@ -7,6 +7,7 @@ package
 	import flash.geom.Vector3D;
 	
 	import geometry.Quaternion;
+	import geometry.Vector2d;
 	
 	import math.Matrix4x4;
 	import math.Utils;
@@ -16,8 +17,6 @@ package
 	{
 		private var _lineSegments:Vector.<Vector.<int>> ;
 		private var _points:Vector.<Vector3D> ;
-		private var _currentLineSegment:int ;
-		private var _currentLineSegmentPoints:Vector.<Vector3D> ;  
 		private var _currentAxis:Vector3D ;
 		private var _index:int ;
 		private var _count:int ;
@@ -35,7 +34,6 @@ package
 			
 			//	Create a collection of points and line segments
 			_points = new Vector.<Vector3D>();
-			_currentLineSegmentPoints = new Vector.<Vector3D>(2,true);
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
@@ -45,15 +43,14 @@ package
 			_camera.position.y = 0 ;
 			_camera.position.z = -100 ;
 			_camera.position.w = 1 ;
-			_camera.width = 400 ;
-			_camera.height = 400 ;
-			_camera.setPerspective( 50, _camera.width/_camera.height, 40, 2000 ) ; 
+			_camera.width = stage.stageWidth ;
+			_camera.height = stage.stageHeight ;
+			_camera.setPerspective( 50, _camera.width/_camera.height, 40, 20000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
 			createLineSegment();
 			addEventListener( Event.ENTER_FRAME, frame ) ;
-			//_worldUp = Vector3D.Y_AXIS.clone();
 		}
 		
 		/**
@@ -61,18 +58,45 @@ package
 		 * @return 
 		 * 
 		 */		
-		private function createLineSegment( ):int
+		private function createLineSegment( ):void
 		{
 			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-			var a:Vector3D = getRandomPoint( 100 );
-			lineSegment[0] = _points.push(a) - 1;
-			var b:Vector3D = getRandomPoint( 100 );	
-			b.normalize() ;
-			b.scaleBy( 20 ) ;
-			lineSegment[1] = _points.push(a.add( b ))-1;
-			return _lineSegments.push(lineSegment);
+			
+			//	Pick a point
+			var axis:Vector3D ;
+			var point:Vector3D ;
+			if ( _points.length == 0 )
+			{
+				point = getRandomPoint( 100 );
+				axis = pickAxis(int( Math.random() * 3 )) ;
+				while (( _currentAxis = pickAxis(int( Math.random() * 3 ))) == axis ) {} ;
+				_points.push(point) ;
+			} else {
+				point = _points[ _points.length - 1].clone();
+				while (( axis = pickAxis(int( Math.random() * 3 ))) == _currentAxis ) {} ;
+				_currentAxis = axis ;
+				_points.push(point);
+			}
+			axis = axis.clone() ;
+			axis.scaleBy( SEGMENT_LENGTH );
+			_points.push(point.add( axis )) ;
+			_points.push( _points[ _points.length - 1].clone());
 		}
 		
+		
+		/**
+		 * Returns the x, y or z axis 
+		 * 
+		 */		
+		private function pickAxis( index:int ):Vector3D
+		{
+			if ( index < 0 || index > 3 || isNaN( Number( index )))
+			{
+				index = int( Math.random() * 3 ) ;
+			}
+			return ( index == 0 ? Vector3D.X_AXIS :
+				( index == 1 ? Vector3D.Y_AXIS : Vector3D.Z_AXIS ));
+		}
 		/**
 		 * Returns a random three-dimensional point 
 		 * @return Vector3D
@@ -109,38 +133,7 @@ package
 			}
 			return null ;
 		}
-		
-		private function createNewLineSegment( ):int
-		{
-			//	Given a line segment, find a vector that's perpendicular to the segment
-			var lineSegment:Vector.<int> = _lineSegments[_currentLineSegment] ;
-			
-			//	First, find a random point that's not on the line segment
-			var a:Vector3D = _points[lineSegment[0]] ;
-			var b:Vector3D = _points[lineSegment[1]] ;
-			var c:Vector3D = getNonCollinearPoint( a, b );
-			
-			//	Take the cross product of ( b - a ) and ( c - a )
-			//	That's the axis around which we'll rotate a new line segment
-			_currentAxis = ( b.subtract( a )).crossProduct( c.subtract( a ));
-			if ( _count % 2 )
-			{
-				_currentAxis = _currentAxis.crossProduct( b.subtract( a ));
-				_currentAxis.negate() ;
-			}
-			_currentAxis.normalize();
-			
-			//	Create a new line segment from the points of the current line segment
-			var index:int = Math.floor( Math.random() * 2 );
-			var newSegment:Vector.<int> = new Vector.<int>(2,true);
-			newSegment[0] = lineSegment[index]; 
-			newSegment[1] = _points.push( _points[lineSegment[(index + 1) % 2]].clone()) -1 ; 
-			_currentLineSegmentPoints[0] = _points[newSegment[0]].clone();
-			_currentLineSegmentPoints[1] = _points[newSegment[1]].clone();
-			return _lineSegments.push(newSegment)-1;
-			
-		}
-		
+				
 		/**
 		 * Frame event handler 
 		 * @param event
@@ -150,8 +143,9 @@ package
 		{
 			if ( _index == 0 )
 			{
-				_count++ ;
-				_currentLineSegment = createNewLineSegment( ) ;
+				if (_count++ > 20 ) 
+					removeEventListener( Event.ENTER_FRAME, frame ) ;
+				else createLineSegment( ) ;
 			}
 			//	Take the vector defined by newSegment[1] - newSegment[0] 
 			//	and rotate it around the current axis every 50 frames
@@ -160,20 +154,29 @@ package
 			
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
+			var axis:Vector3D ;
+			if ( _count % 2 )
+			{
+				axis = _currentAxis.clone();
+				axis.negate();
+			} else
+			{
+				axis = _currentAxis ;
+			}
 			var from:Quaternion = new Quaternion();
-			from.SetAxisAngle( _currentAxis, 0 );
+			from.SetAxisAngle( axis, 0 );
 			var to:Quaternion = new Quaternion();
-			to.SetAxisAngle( _currentAxis, Math.PI / 2 );
+			to.SetAxisAngle( axis, Math.PI / 2 );
 			
 			//	Interpolate using slerp
 			var quaternion:Quaternion = Quaternion.Slerp( from, to, t );
 			
 			//	Grab the points of the current line segment, and calculate
 			//	the vector obtained by subtracting b from a
-			var a:Vector3D = _currentLineSegmentPoints[0] ;
-			var b:Vector3D = _currentLineSegmentPoints[1] ;
+			var a:Vector3D = _points[ _points.length - 3 ] ;
+			var b:Vector3D = _points[ _points.length - 2 ] ;
 			var d:Vector3D = b.subtract( a ) ;
-			d.normalize();
+			d.scaleBy( 1/SEGMENT_LENGTH );
 			
 
 			
@@ -191,31 +194,28 @@ package
 			
 			//	Create
 			//	Modify the current segment
-			var v:Vector3D = new Vector3D( product.x, product.y, product.z ) ;
-			v.scaleBy( SEGMENT_LENGTH ) ;
-			var w:Vector3D =  a.add( v);
-			var q:Vector3D = _points[_lineSegments[_currentLineSegment][1]] ;
-			q.x = w.x ; q.y = w.y ; q.z = w.z ;
+			var q:Vector3D = new Vector3D( product.x, product.y, product.z ) ;
+			q.scaleBy( SEGMENT_LENGTH ) ;
+			var v:Vector3D = _points[ _points.length-1] ;
+			var w:Vector3D = v.add( q );
+			v.x = w.x ; v.y = w.y ; v.z = w.z ;
 			
-			d.scaleBy( SEGMENT_LENGTH * t ) ;
-			var foo:Vector3D = a.add( d);
+			_camera.position.x = v.x + axis.x * SEGMENT_LENGTH ;
+			_camera.position.y = v.y + axis.y * SEGMENT_LENGTH ;
+			_camera.position.z = v.z + axis.z * SEGMENT_LENGTH ;
 			
-//			_camera.position.x = q.x + _currentAxis.x * SEGMENT_LENGTH ;
-//			_camera.position.y = q.y + _currentAxis.y * SEGMENT_LENGTH ;
-//			_camera.position.z = q.z + _currentAxis.z * SEGMENT_LENGTH ;
-			
-			var angle:Number = 1 * RADIANS ;
-			var x:Number = _camera.position.x ;
-			var z:Number = _camera.position.z ;
-			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
-			_camera.position.w = 1 ;
+//			var angle:Number = 1 * RADIANS ;
+//			var x:Number = _camera.position.x ;
+//			var z:Number = _camera.position.z ;
+//			_camera.position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
+//			_camera.position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+//			_camera.position.w = 1 ;
 			_worldUp = new Vector3D( -_camera.position.z, 0, _camera.position.x ) ;
 			_worldUp.normalize() ;
 			
 			
 			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( q.x, q.y, q.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( v.x, v.y, v.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
@@ -223,12 +223,11 @@ package
 			var transformedPoints:Vector.<Vector3D> = new Vector.<Vector3D>( );
 			
 			//	Iterate over all the line segments
-			for ( var j:int = 0; j < _lineSegments.length; j++ )
+			for ( var j:int = 0; j < _points.length-1; j++ )
 			{
 				//	Grab the current line segment
-				var lineSegment:Vector.<int> = _lineSegments[j] ;
-				a = _points[lineSegment[0]].clone() ;
-				b = _points[lineSegment[1]].clone() ;
+				a = _points[j].clone() ;
+				b = _points[j+1].clone() ;
 				a = worldToView.transform( a ) ;
 				b = worldToView.transform( b ) ;
 				
