@@ -221,8 +221,8 @@ package
 			for ( var j:int = 0; j < _points.length-1; j++ )
 			{
 				//	Grab the current line segment
-				a = _points[j].clone() ;
-				b = _points[j+1].clone() ;
+				a = _points[j] ;
+				b = _points[j+1] ;
 				a = worldToView.transform( a ) ;
 				b = worldToView.transform( b ) ;
 				
@@ -256,9 +256,7 @@ package
 			{
 				a = transformedPoints[j] ;
 				b = transformedPoints[j+1] ;
-				if ( j < length-1 )
-					graphics.beginFill( 0x000000 ) ;
-				else graphics.beginFill( 0xff0000 );
+				graphics.beginFill( 0x000000 );
 				graphics.drawCircle( a.x, a.y, 1 ) ;
 				graphics.drawCircle( b.x, b.y, 1 ) ;
 				graphics.endFill() ;

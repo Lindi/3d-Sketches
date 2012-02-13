@@ -25,7 +25,7 @@ package
 			super();
 			
 			//	Make some confetti
-			var particles:Number = 150 ;
+			var particles:Number = 500 ;
 			for ( var i:int = 0; i < particles; i++ )
 			{
 				var confetti:Confetti = new Confetti( );
@@ -172,19 +172,19 @@ package
 //						( color == 2 ? 0xB2BDBD :
 //							( color == 3 ? 0xCDCEB0 : 0x000000 ))));
 			
-//			//	Pink Confetti (Luli)
-//			var color:int = int( Math.random() * 4 );
-//			confetti.color = 
-//				( color == 0 ? 0xBCBBA5 : 
-//					( color == 1 ? 0xFF86A6 : 
-//						( color == 2 ? 0xFFD8D9 : 0xFFF2ED )));
-			
-			//	Marc Jacobs
+			//	Pink Confetti (Luli)
 			var color:int = int( Math.random() * 4 );
 			confetti.color = 
-				( color == 0 ? 0xF21B6A : 
-					( color == 1 ? 0x41C0F2 : 
-						( color == 2 ? 0x027353 : 0xD9CB04 )));
+				( color == 0 ? 0xBCBBA5 : 
+					( color == 1 ? 0xFF86A6 : 
+						( color == 2 ? 0xFFD8D9 : 0xFFF2ED )));
+			
+//			//	Marc Jacobs
+//			var color:int = int( Math.random() * 4 );
+//			confetti.color = 
+//				( color == 0 ? 0xF21B6A : 
+//					( color == 1 ? 0x41C0F2 : 
+//						( color == 2 ? 0x027353 : 0xD9CB04 )));
 
 			//			//	Winter
 //			var color:int = int( Math.random() * 5 );
