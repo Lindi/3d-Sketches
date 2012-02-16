@@ -142,7 +142,7 @@ package
 		{
 			if ( _index == 0 )
 			{
-				if (_count++ > 25 ) 
+				if (_count++ > 100 ) 
 					removeEventListener( Event.ENTER_FRAME, frame ) ;
 				else createLineSegment( ) ;
 			}
@@ -177,7 +177,7 @@ package
 			var a:Vector3D = _points[_lineSegments[index][0]] ;
 			var b:Vector3D = _points[_lineSegments[index][1]] ;
 			var d:Vector3D = b.subtract( a ) ;
-//			trace( d ) ;
+			//trace( d ) ;
 			//d.normalize();
 			//d.scaleBy( 1/SEGMENT_LENGTH );
 			
@@ -199,7 +199,9 @@ package
 			//	Create
 			//	Modify the current segment
 			var v:Vector3D = _points[_lineSegments[index][0]] ;
+			trace( v ) ;
 			var w:Vector3D = v.add( product );
+			trace( w ) ;
 			v =  _points[_lineSegments[index+1][1]]
 			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = w.w ;
 			
@@ -210,13 +212,13 @@ package
 			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
 			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
 			_position.w = 1 ;
+			_camera.position.x = _position.x ;//+ v.x ;
+			_camera.position.y = _position.y ;//v.y ;
+			_camera.position.z = _position.z ;//v.z ;
+			_camera.position.w = _position.w ;//v.w ;
+			
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
-			_camera.position.x = _position.x + v.x ;
-			_camera.position.y = _position.y + v.y ;
-			_camera.position.z = _position.z + v.z ;
-			_camera.position.w = _position.w + v.w ;
-			
 			
 			//	Iterate over the confetti and compute their projections
 			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( v.x, v.y, v.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
@@ -228,25 +230,25 @@ package
 			for ( var j:int = 0; j < _points.length-1; j++ )
 				transformedPoints.push( _points[j].clone() ) ;
 			
-			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
-			for ( j = 0; j < _lineSegments.length-1; j++ )
-			{
-				var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-				lineSegment[0] = _lineSegments[j][0] ;
-				lineSegment[1] = _lineSegments[j][1] ;
-				transformedLineSegments.push( lineSegment ) ;
-			}
-			
+//			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
+//			for ( j = 0; j < _lineSegments.length-1; j++ )
+//			{
+//				var lineSegment:Vector.<int> = new Vector.<int>(2,true);
+//				lineSegment[0] = _lineSegments[j][0] ;
+//				lineSegment[1] = _lineSegments[j][1] ;
+//				transformedLineSegments.push( lineSegment ) ;
+//			}
+//			
 			//	Iterate over all the line segments
-			for ( j = 0; j < transformedLineSegments.length-1; j++ )
+			for ( j = 0; j < transformedPoints.length-1; j+=2 )
 			{
-				lineSegment = transformedLineSegments[j] ;
-				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
-					continue ;
+//				lineSegment = transformedLineSegments[j] ;
+//				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
+//					continue ;
 				
 				//	Grab the current line segment
-				a = transformedPoints[lineSegment[0]] ;
-				b = transformedPoints[lineSegment[1]] ;
+				a = transformedPoints[j] ; //transformedPoints[lineSegment[0]] ;
+				b = transformedPoints[j+1] ; //lineSegment[1]] ;
 				a = worldToView.transform( a ) ;
 				b = worldToView.transform( b ) ;
 				
@@ -254,38 +256,25 @@ package
 				var clip:Vector.<Vector3D> = _camera.clip( a, b ) ;
 				if ( clip != null )
 				{
-					//	TODO: Clip the points as well
-					//	Add the transformed points to the collection
-					//	of transformed points
-					if ( clip[0] != a )
-					{
-						lineSegment[0] = transformedPoints.push( clip[0] ) - 1;
-						a = clip[0] ;
-					}
 					a = projection.transform( a );
 					a.project();
 					a.w = 1 ;
 					a = screenTransform.transform( a ) ;
-					transformedPoints[lineSegment[0]].x = a.x ;
-					transformedPoints[lineSegment[0]].y = a.y ;
-					transformedPoints[lineSegment[0]].z = a.z ;
-					transformedPoints[lineSegment[0]].w = a.w ;
-					if ( clip[1] != b )
-					{
-						lineSegment[1] = transformedPoints.push( clip[1] ) - 1;
-						b = clip[1] ;	
-					}
+					transformedPoints[j].x = a.x ;
+					transformedPoints[j].y = a.y ;
+					transformedPoints[j].z = a.z ;
+					transformedPoints[j].w = a.w ;
 					b = projection.transform( b );
 					b.project();
 					b.w = 1 ;
 					b = screenTransform.transform( b ) ;
-					transformedPoints[lineSegment[1]].x = b.x ;
-					transformedPoints[lineSegment[1]].y = b.y ;
-					transformedPoints[lineSegment[1]].z = b.z ;
-					transformedPoints[lineSegment[1]].w = b.w ;
+					transformedPoints[j+1].x = b.x ;
+					transformedPoints[j+1].y = b.y ;
+					transformedPoints[j+1].z = b.z ;
+					transformedPoints[j+1].w = b.w ;
 				} else {
-					lineSegment[0] = -1 ;
-					lineSegment[1] = -1 ;
+					transformedPoints[j] = null ;
+					transformedPoints[j+1] = null ;
 				}
 			}
 			
@@ -293,14 +282,13 @@ package
 			//	The number of transformed points should always be even
 			graphics.clear(); 
 			graphics.lineStyle( undefined ) ;
-			for ( j = 0; j < transformedLineSegments.length; j++ )
+			for ( j = 0; j < transformedPoints.length; j+=2 )
 			{
-				lineSegment = transformedLineSegments[j] ;
-				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
+				a = transformedPoints[j] ;
+				b = transformedPoints[j+1] ;
+				if ( a == null || b == null )
 					continue ;
 				
-				a = transformedPoints[lineSegment[0]] ;
-				b = transformedPoints[lineSegment[1]] ;
 				graphics.beginFill( 0x000000 );
 				graphics.drawCircle( a.x, a.y, 1 ) ;
 				graphics.drawCircle( b.x, b.y, 1 ) ;
