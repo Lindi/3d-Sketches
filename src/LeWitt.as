@@ -38,7 +38,7 @@ package
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
-			_position = new Vector3D( 0, 0, -100, 1 );
+			_position = new Vector3D( 0, 0, -500, 1 );
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = _position.x ;
@@ -61,32 +61,25 @@ package
 		 */		
 		private function createLineSegment( ):void
 		{
-			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-			_lineSegments.push( lineSegment ) ;
-			
-			//	Pick a point
-			var axis:Vector3D ;
 			var point:Vector3D ;
 			if ( _points.length == 0 )
-			{
-				point = new Vector3D(); //getRandomPoint( 100 );
-				axis = pickAxis(int( Math.random() * 3 )) ;
-				while (( _currentAxis = pickAxis(int( Math.random() * 3 ))) == axis ) {} ;
-				lineSegment[0] = _points.push(point) - 1;
-			} else {
-				point = _points[ _points.length - 1].clone();
-				while (( axis = pickAxis(int( Math.random() * 3 ))) == _currentAxis ) {} ;
-				_currentAxis = axis ;
-				lineSegment[0] = _points.push(point) - 1;
-			}
-			axis = axis.clone() ;
+				_points.push(new Vector3D( 0, 0, 0, 1 )) ;
+			var axis:Vector3D ;
+			while (( axis = pickAxis(int( Math.random() * 3 ))) == _currentAxis ) {} ;
+			while (( _currentAxis = pickAxis(int( Math.random() * 3 ))) == axis ) {} ;
+			axis = axis.clone();
 			axis.scaleBy( SEGMENT_LENGTH );
-			lineSegment[1] = _points.push(point.add( axis )) - 1;
-			lineSegment = new Vector.<int>(2,true);
+			point = _points[ _points.length - 1 ] ;
+			_points.push( point.add( axis ));
+			_points.push( _points[ _points.length - 2 ].clone() );
+			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
+			lineSegment[0] = _points.length - 3 ;
+			lineSegment[1] = _points.length - 2 ;
 			_lineSegments.push( lineSegment ) ;
-			lineSegment[0] = _points.length -1 ; 
-			lineSegment[1] = _points.push( _points[ _points.length - 1].clone()) -1 ;
-			
+			lineSegment = new Vector.<int>(2,true);
+			lineSegment[0] = _points.length - 2 ;
+			lineSegment[1] = _points.length - 1 ;
+			_lineSegments.push( lineSegment ) ;
 		}
 		
 		
@@ -149,7 +142,7 @@ package
 		{
 			if ( _index == 0 )
 			{
-				if (_count++ > 20 ) 
+				if (_count++ > 25 ) 
 					removeEventListener( Event.ENTER_FRAME, frame ) ;
 				else createLineSegment( ) ;
 			}
@@ -161,14 +154,14 @@ package
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
 			var axis:Vector3D ;
-			if ( _count % 2 )
-			{
-				axis = _currentAxis.clone();
-				axis.negate();
-			} else
-			{
+//			if ( _count % 2 )
+//			{
+//				axis = _currentAxis.clone();
+//				axis.negate();
+//			} else
+//			{
 				axis = _currentAxis ;
-			}
+//			}
 			var from:Quaternion = new Quaternion();
 			from.SetAxisAngle( axis, 0 );
 			var to:Quaternion = new Quaternion();
@@ -176,13 +169,17 @@ package
 			
 			//	Interpolate using slerp
 			var quaternion:Quaternion = Quaternion.Slerp( from, to, t );
+//			trace( quaternion ) ;
 			
 			//	Grab the points of the current line segment, and calculate
 			//	the vector obtained by subtracting b from a
-			var a:Vector3D = _points[ _points.length - 3 ] ;
-			var b:Vector3D = _points[ _points.length - 2 ] ;
+			var index:int = _lineSegments.length - 2 ;
+			var a:Vector3D = _points[_lineSegments[index][0]] ;
+			var b:Vector3D = _points[_lineSegments[index][1]] ;
 			var d:Vector3D = b.subtract( a ) ;
-			d.scaleBy( 1/SEGMENT_LENGTH );
+//			trace( d ) ;
+			//d.normalize();
+			//d.scaleBy( 1/SEGMENT_LENGTH );
 			
 			//	Create a quaternion from this vector, and transform it
 			//	by the interpolated quaterion (should refactor this into a function)
@@ -190,21 +187,23 @@ package
 			//	segment, we're going to end up interpolating a modified point.
 			//	We don't want to do this, so we should create a duplicate of the
 			//	current segment's enpoint and store it somewhere
-			var vector:Quaternion = new Quaternion( 0, d.x, d.y, d.z );
-			var inverse:Quaternion = quaternion.Inverse();
-			var product:Quaternion = vector.Multiply( inverse ) ;
-			product = quaternion.Multiply( product ) ;
+//			var vector:Quaternion = new Quaternion( 0, d.x, d.y, d.z );
+//			var inverse:Quaternion = quaternion.Inverse();
+//			var product:Quaternion = vector.Multiply( inverse ) ;
+//			product = quaternion.Multiply( product ) ;
+			var product:Vector3D = quaternion.Rotate( d ) ;
+			//trace( product ) ;
+			//trace( product );
 			
 			
 			//	Create
 			//	Modify the current segment
-			var q:Vector3D = new Vector3D( product.x, product.y, product.z ) ;
-			q.scaleBy( SEGMENT_LENGTH ) ;
-			var v:Vector3D = _points[ _points.length-1] ;
-			var w:Vector3D = v.add( q );
-			v.x = w.x ; v.y = w.y ; v.z = w.z ;
+			var v:Vector3D = _points[_lineSegments[index][0]] ;
+			var w:Vector3D = v.add( product );
+			v =  _points[_lineSegments[index+1][1]]
+			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = w.w ;
 			
-			//	Rotate the camera around the current point
+////			//	Rotate the camera around the current point
 			var angle:Number = 1 * RADIANS ;
 			var x:Number = _camera.position.x ;
 			var z:Number = _camera.position.z ;
@@ -213,10 +212,10 @@ package
 			_position.w = 1 ;
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
-			_camera.position.x = _position.x ;//+ v.x ;
-			_camera.position.y = _position.y ;//+ v.y ;
-			_camera.position.z = _position.z ;//+ v.z ;
-			_camera.position.w = _position.w ;//+ v.w ;
+			_camera.position.x = _position.x + v.x ;
+			_camera.position.y = _position.y + v.y ;
+			_camera.position.z = _position.z + v.z ;
+			_camera.position.w = _position.w + v.w ;
 			
 			
 			//	Iterate over the confetti and compute their projections
