@@ -38,7 +38,7 @@ package
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
-			_position = new Vector3D( 0, 0, -1500, 1 );
+			_position = new Vector3D( 0, 0, -150, 1 );
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = _position.x ;
@@ -47,7 +47,7 @@ package
 			_camera.position.w = _position.w ;
 			_camera.width = stage.stageWidth ;
 			_camera.height = stage.stageHeight ;
-			_camera.setPerspective( 50, _camera.width/_camera.height, 100, 20000 ) ; 
+			_camera.setPerspective( 50, _camera.width/_camera.height, 40, 20000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
@@ -204,25 +204,25 @@ package
 			var v:Vector3D = _points[_lineSegments[index][1]] ;
 			var w:Vector3D = v.add( product );
 			v =  _points[_lineSegments[index+1][1]]
-			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = w.w ;
+			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = 1;//w.w ;
 			
 ////		//	Rotate the camera around the current point
-			var angle:Number = 5 * RADIANS ;
-			var x:Number = _camera.position.x ;
-			var z:Number = _camera.position.z ;
-			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
-			_position.w = 1 ;
-			_camera.position.x = _position.x ;
-			_camera.position.y = _position.y ;
-			_camera.position.z = _position.z ;
-			_camera.position.w = 1 ;
+//			var angle:Number = 5 * RADIANS ;
+//			var x:Number = _camera.position.x ;
+//			var z:Number = _camera.position.z ;
+//			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
+//			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+//			_position.w = 1 ;
+//			_camera.position.x = _position.x ;
+//			_camera.position.y = _position.y ;
+//			_camera.position.z = _position.z ;
+//			_camera.position.w = 1 ;
 			
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
 			
 			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 0, 100, 1), _worldUp ) ; 
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( v.x, v.y, v.z, 1), _worldUp ) ; 
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
