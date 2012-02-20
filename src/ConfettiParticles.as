@@ -92,8 +92,6 @@ package
 				//	Grab a reference to the automaton
 				var confetti:Confetti = _confetti[ i ]  ;
  				var velocity:int = int( confetti.velocity * 2 );
-//				confetti.position.x = confetti.COSINE_OMEGA * x - confetti.SINE_OMEGA * z;
-//				confetti.position.z = confetti.COSINE_OMEGA * z + confetti.SINE_OMEGA * x;
 				confetti.position.y -= confetti.velocity ;
 				if ( confetti.position.y < 0 )
 				{

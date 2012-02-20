@@ -38,7 +38,7 @@ package
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
-			_position = new Vector3D( 0, 0, -200, 1 );
+			_position = new Vector3D( 0, 0, -1500, 1 );
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = _position.x ;
@@ -47,7 +47,7 @@ package
 			_camera.position.w = _position.w ;
 			_camera.width = stage.stageWidth ;
 			_camera.height = stage.stageHeight ;
-			_camera.setPerspective( 50, _camera.width/_camera.height, 40, 20000 ) ; 
+			_camera.setPerspective( 50, _camera.width/_camera.height, 100, 20000 ) ; 
 			_camera.getScreenTransformMatrix( stage.stageWidth, stage.stageHeight ) ;
 			
 			//	Start by creating a line segment
@@ -157,14 +157,14 @@ package
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
 			var axis:Vector3D ;
-//			if ( _count % 2 )
-//			{
-//				axis = _currentAxis.clone();
-//				axis.negate();
-//			} else
-//			{
+			if ( _count % 2 )
+			{
+				axis = _currentAxis.clone();
+				axis.negate();
+			} else
+			{
 				axis = _currentAxis ;
-//			}
+			}
 			var from:Quaternion = new Quaternion();
 			from.SetAxisAngle( axis, 0 );
 			var to:Quaternion = new Quaternion();
@@ -202,14 +202,12 @@ package
 			//	Create
 			//	Modify the current segment
 			var v:Vector3D = _points[_lineSegments[index][1]] ;
-			trace( v ) ;
 			var w:Vector3D = v.add( product );
-			trace( w ) ;
 			v =  _points[_lineSegments[index+1][1]]
 			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = w.w ;
 			
 ////		//	Rotate the camera around the current point
-			var angle:Number = 1 * RADIANS ;
+			var angle:Number = 5 * RADIANS ;
 			var x:Number = _camera.position.x ;
 			var z:Number = _camera.position.z ;
 			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
@@ -218,13 +216,13 @@ package
 			_camera.position.x = _position.x ;
 			_camera.position.y = _position.y ;
 			_camera.position.z = _position.z ;
-			_camera.position.w = _position.w ;
+			_camera.position.w = 1 ;
 			
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
 			
 			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 0, 0, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 0, 100, 1), _worldUp ) ; 
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
@@ -233,6 +231,7 @@ package
 			for ( var j:int = 0; j < _points.length; j++ )
 				transformedPoints.push( _points[j].clone() ) ;
 			
+			//	Copy the line segments too
 			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
 			for ( j = 0; j < _lineSegments.length; j++ )
 			{
@@ -241,13 +240,12 @@ package
 				lineSegment[1] = _lineSegments[j][1] ;
 				transformedLineSegments.push( lineSegment ) ;
 			}
-//			
 			//	Iterate over all the line segments
 			for ( j = 0; j < transformedLineSegments.length; j++ )
 			{
 				lineSegment = transformedLineSegments[j] ;
-				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
-					continue ;
+//				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
+//					continue ;
 				
 				//	Grab the current line segment
 				a = transformedPoints[lineSegment[0]] ;
@@ -260,10 +258,8 @@ package
 					_camera.clip( a, b  ) ;
 				if ( clip != null )
 				{
-					if ( a != clip[0] )
-						lineSegment[0] = transformedPoints.push( a ) - 1 ;
-					if ( b != clip[1] )
-						lineSegment[1] = transformedPoints.push( b ) - 1 ;
+					lineSegment[0] = transformedPoints.push( a ) - 1 ;
+					lineSegment[1] = transformedPoints.push( b ) - 1 ;
 				} else {
 					
 					lineSegment[0] = -1;
@@ -283,7 +279,7 @@ package
 				transformedPoints[j].x = a.x ;
 				transformedPoints[j].y = a.y ;
 				transformedPoints[j].z = a.z ;
-				transformedPoints[j].w = a.w ;
+				transformedPoints[j].w = 1 ;
 			}
 			
 			//	 Draw all the line segments
