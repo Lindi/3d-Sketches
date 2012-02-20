@@ -207,16 +207,16 @@ package
 			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = 1;//w.w ;
 			
 ////		//	Rotate the camera around the current point
-//			var angle:Number = 5 * RADIANS ;
-//			var x:Number = _camera.position.x ;
-//			var z:Number = _camera.position.z ;
-//			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
-//			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
-//			_position.w = 1 ;
-//			_camera.position.x = _position.x ;
-//			_camera.position.y = _position.y ;
-//			_camera.position.z = _position.z ;
-//			_camera.position.w = 1 ;
+			var angle:Number = 5 * RADIANS ;
+			var x:Number = _position.x ;
+			var z:Number = _position.z ;
+			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
+			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
+			_position.w = 1 ;
+			_camera.position.x = _position.x + v.x ;
+			_camera.position.y = _position.y ;
+			_camera.position.z = _position.z + v.z ;
+			_camera.position.w = 1 ;
 			
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
