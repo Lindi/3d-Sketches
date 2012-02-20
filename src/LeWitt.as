@@ -38,7 +38,7 @@ package
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
-			_position = new Vector3D( 0, 0, -500, 1 );
+			_position = new Vector3D( 0, 0, -200, 1 );
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = _position.x ;
@@ -61,16 +61,18 @@ package
 		 */		
 		private function createLineSegment( ):void
 		{
-			var point:Vector3D ;
-			if ( _points.length == 0 )
-				_points.push(new Vector3D( 0, 0, 0, 1 )) ;
 			var axis:Vector3D ;
 			while (( axis = pickAxis(int( Math.random() * 3 ))) == _currentAxis ) {} ;
 			while (( _currentAxis = pickAxis(int( Math.random() * 3 ))) == axis ) {} ;
 			axis = axis.clone();
 			axis.scaleBy( SEGMENT_LENGTH );
-			point = _points[ _points.length - 1 ] ;
-			_points.push( point.add( axis ));
+			var point:Vector3D ;
+			if ( _points.length == 0 )
+			{
+				_points.push( new Vector3D( 0, 0, 100, 1)) ;
+				point = _points[ _points.length - 1 ] ;
+				_points.push( point.add( axis ));
+			}
 			_points.push( _points[ _points.length - 2 ].clone() );
 			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
 			lineSegment[0] = _points.length - 3 ;
@@ -148,8 +150,9 @@ package
 			}
 			//	Take the vector defined by newSegment[1] - newSegment[0] 
 			//	and rotate it around the current axis every 50 frames
-			var t:Number = (_index++)/SEGMENT_LENGTH ;
-			_index %= SEGMENT_LENGTH ;
+			var n:int = SEGMENT_LENGTH ;
+			var t:Number = (_index++)/n ;
+			_index %= (n+1) ;
 			
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
@@ -174,8 +177,8 @@ package
 			//	Grab the points of the current line segment, and calculate
 			//	the vector obtained by subtracting b from a
 			var index:int = _lineSegments.length - 2 ;
-			var a:Vector3D = _points[_lineSegments[index][0]] ;
-			var b:Vector3D = _points[_lineSegments[index][1]] ;
+			var a:Vector3D = _points[_lineSegments[index][1]] ;
+			var b:Vector3D = _points[_lineSegments[index][0]] ;
 			var d:Vector3D = b.subtract( a ) ;
 			//trace( d ) ;
 			//d.normalize();
@@ -198,96 +201,104 @@ package
 			
 			//	Create
 			//	Modify the current segment
-			var v:Vector3D = _points[_lineSegments[index][0]] ;
+			var v:Vector3D = _points[_lineSegments[index][1]] ;
 			trace( v ) ;
 			var w:Vector3D = v.add( product );
 			trace( w ) ;
 			v =  _points[_lineSegments[index+1][1]]
 			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = w.w ;
 			
-////			//	Rotate the camera around the current point
+////		//	Rotate the camera around the current point
 			var angle:Number = 1 * RADIANS ;
 			var x:Number = _camera.position.x ;
 			var z:Number = _camera.position.z ;
 			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
 			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
 			_position.w = 1 ;
-			_camera.position.x = _position.x ;//+ v.x ;
-			_camera.position.y = _position.y ;//v.y ;
-			_camera.position.z = _position.z ;//v.z ;
-			_camera.position.w = _position.w ;//v.w ;
+			_camera.position.x = _position.x ;
+			_camera.position.y = _position.y ;
+			_camera.position.z = _position.z ;
+			_camera.position.w = _position.w ;
 			
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
 			
 			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( v.x, v.y, v.z, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( 0, 0, 0, 1), _worldUp ) ;//_camera.transform;_ ; //_camera.lookAt( new Vector3D(0,300,0), Vector3D.Z_AXIS ) ;
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
 			//	Keep a collection of points we're transforming
 			var transformedPoints:Vector.<Vector3D> = new Vector.<Vector3D>( );
-			for ( var j:int = 0; j < _points.length-1; j++ )
+			for ( var j:int = 0; j < _points.length; j++ )
 				transformedPoints.push( _points[j].clone() ) ;
 			
-//			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
-//			for ( j = 0; j < _lineSegments.length-1; j++ )
-//			{
-//				var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-//				lineSegment[0] = _lineSegments[j][0] ;
-//				lineSegment[1] = _lineSegments[j][1] ;
-//				transformedLineSegments.push( lineSegment ) ;
-//			}
+			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
+			for ( j = 0; j < _lineSegments.length; j++ )
+			{
+				var lineSegment:Vector.<int> = new Vector.<int>(2,true);
+				lineSegment[0] = _lineSegments[j][0] ;
+				lineSegment[1] = _lineSegments[j][1] ;
+				transformedLineSegments.push( lineSegment ) ;
+			}
 //			
 			//	Iterate over all the line segments
-			for ( j = 0; j < transformedPoints.length-1; j+=2 )
+			for ( j = 0; j < transformedLineSegments.length; j++ )
 			{
-//				lineSegment = transformedLineSegments[j] ;
-//				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
-//					continue ;
+				lineSegment = transformedLineSegments[j] ;
+				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
+					continue ;
 				
 				//	Grab the current line segment
-				a = transformedPoints[j] ; //transformedPoints[lineSegment[0]] ;
-				b = transformedPoints[j+1] ; //lineSegment[1]] ;
-				a = worldToView.transform( a ) ;
-				b = worldToView.transform( b ) ;
+				a = transformedPoints[lineSegment[0]] ;
+				b = transformedPoints[lineSegment[1]] ;
+				a = worldToView.transform( a );
+				b = worldToView.transform( b );
 				
 				//	Clip the line segment a-b
-				var clip:Vector.<Vector3D> = _camera.clip( a, b ) ;
+				var clip:Vector.<Vector3D> = 
+					_camera.clip( a, b  ) ;
 				if ( clip != null )
 				{
-					a = projection.transform( a );
-					a.project();
-					a.w = 1 ;
-					a = screenTransform.transform( a ) ;
-					transformedPoints[j].x = a.x ;
-					transformedPoints[j].y = a.y ;
-					transformedPoints[j].z = a.z ;
-					transformedPoints[j].w = a.w ;
-					b = projection.transform( b );
-					b.project();
-					b.w = 1 ;
-					b = screenTransform.transform( b ) ;
-					transformedPoints[j+1].x = b.x ;
-					transformedPoints[j+1].y = b.y ;
-					transformedPoints[j+1].z = b.z ;
-					transformedPoints[j+1].w = b.w ;
+					if ( a != clip[0] )
+						lineSegment[0] = transformedPoints.push( a ) - 1 ;
+					if ( b != clip[1] )
+						lineSegment[1] = transformedPoints.push( b ) - 1 ;
 				} else {
-					transformedPoints[j] = null ;
-					transformedPoints[j+1] = null ;
+					
+					lineSegment[0] = -1;
+					lineSegment[1] = -1;
 				}
+			}
+			
+			//	We're doing extra work here.  We have to come up
+			//	with a better data structure for this ...
+			for ( j = 0; j < transformedPoints.length; j++ )
+			{
+				a = transformedPoints[j] ;
+				a = projection.transform( a );
+				a.project();
+				a.w = 1 ;
+				a = screenTransform.transform( a ) ;
+				transformedPoints[j].x = a.x ;
+				transformedPoints[j].y = a.y ;
+				transformedPoints[j].z = a.z ;
+				transformedPoints[j].w = a.w ;
 			}
 			
 			//	 Draw all the line segments
 			//	The number of transformed points should always be even
 			graphics.clear(); 
 			graphics.lineStyle( undefined ) ;
-			for ( j = 0; j < transformedPoints.length; j+=2 )
+			for ( j = 0; j < transformedLineSegments.length; j++ )
 			{
-				a = transformedPoints[j] ;
-				b = transformedPoints[j+1] ;
-				if ( a == null || b == null )
+				lineSegment = transformedLineSegments[j] ;
+				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
 					continue ;
+				
+				//	Grab the current line segment
+				a = transformedPoints[lineSegment[0]] ;
+				b = transformedPoints[lineSegment[1]] ;
 				
 				graphics.beginFill( 0x000000 );
 				graphics.drawCircle( a.x, a.y, 1 ) ;
