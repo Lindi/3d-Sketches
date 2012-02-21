@@ -38,7 +38,7 @@ package
 			_lineSegments = new Vector.<Vector.<int>>();
 			
 			//	Make a new camera
-			_position = new Vector3D( 0, 0, -150, 1 );
+			_position = new Vector3D( 0, 0, -250, 1 );
 			_camera = new Camera();
 			_camera.position = new Vector3D( );
 			_camera.position.x = _position.x ;
@@ -69,15 +69,15 @@ package
 			var point:Vector3D ;
 			if ( _points.length == 0 )
 			{
-				_points.push( new Vector3D( 0, 0, 100, 1)) ;
+				_points.push( new Vector3D( 0,0,100,1)) ;
 				point = _points[ _points.length - 1 ] ;
 				_points.push( point.add( axis ));
+				var lineSegment:Vector.<int> = new Vector.<int>(2,true);
+				lineSegment[0] = _points.length - 2 ;
+				lineSegment[1] = _points.length - 1 ;
+				_lineSegments.push( lineSegment ) ;
 			}
 			_points.push( _points[ _points.length - 2 ].clone() );
-			var lineSegment:Vector.<int> = new Vector.<int>(2,true);
-			lineSegment[0] = _points.length - 3 ;
-			lineSegment[1] = _points.length - 2 ;
-			_lineSegments.push( lineSegment ) ;
 			lineSegment = new Vector.<int>(2,true);
 			lineSegment[0] = _points.length - 2 ;
 			lineSegment[1] = _points.length - 1 ;
@@ -144,7 +144,7 @@ package
 		{
 			if ( _index == 0 )
 			{
-				if (_count++ > 100 ) 
+				if (_count++ > 500 ) 
 					removeEventListener( Event.ENTER_FRAME, frame ) ;
 				else createLineSegment( ) ;
 			}
@@ -157,14 +157,14 @@ package
 			//	It'd be smarter to create these once per
 			//	line segment in the createNewLineSegment handler
 			var axis:Vector3D ;
-			if ( _count % 2 )
-			{
-				axis = _currentAxis.clone();
-				axis.negate();
-			} else
-			{
+//			if ( _count % 3 )
+//			{
+//				axis = _currentAxis.clone();
+//				axis.negate();
+//			} else
+//			{
 				axis = _currentAxis ;
-			}
+//			}
 			var from:Quaternion = new Quaternion();
 			from.SetAxisAngle( axis, 0 );
 			var to:Quaternion = new Quaternion();
@@ -172,7 +172,6 @@ package
 			
 			//	Interpolate using slerp
 			var quaternion:Quaternion = Quaternion.Slerp( from, to, t );
-//			trace( quaternion ) ;
 			
 			//	Grab the points of the current line segment, and calculate
 			//	the vector obtained by subtracting b from a
@@ -180,9 +179,6 @@ package
 			var a:Vector3D = _points[_lineSegments[index][1]] ;
 			var b:Vector3D = _points[_lineSegments[index][0]] ;
 			var d:Vector3D = b.subtract( a ) ;
-			//trace( d ) ;
-			//d.normalize();
-			//d.scaleBy( 1/SEGMENT_LENGTH );
 			
 			//	Create a quaternion from this vector, and transform it
 			//	by the interpolated quaterion (should refactor this into a function)
@@ -190,46 +186,54 @@ package
 			//	segment, we're going to end up interpolating a modified point.
 			//	We don't want to do this, so we should create a duplicate of the
 			//	current segment's enpoint and store it somewhere
-//			var vector:Quaternion = new Quaternion( 0, d.x, d.y, d.z );
-//			var inverse:Quaternion = quaternion.Inverse();
-//			var product:Quaternion = vector.Multiply( inverse ) ;
-//			product = quaternion.Multiply( product ) ;
-			var product:Vector3D = quaternion.Rotate( d ) ;
-			//trace( product ) ;
-			//trace( product );
+			
+			//	Note that we can also call the rotate method of the
+			//	quaternion to do the same thing
+			var vector:Quaternion = new Quaternion( 0, d.x, d.y, d.z );
+			var inverse:Quaternion = quaternion.Inverse();
+			var product:Quaternion = vector.Multiply( inverse ) ;
+			product = quaternion.Multiply( product ) ;
 			
 			
 			//	Create
 			//	Modify the current segment
-			var v:Vector3D = _points[_lineSegments[index][1]] ;
-			var w:Vector3D = v.add( product );
-			v =  _points[_lineSegments[index+1][1]]
-			v.x = w.x ; v.y = w.y ; v.z = w.z, v.w = 1;//w.w ;
+			a = _points[_lineSegments[index][1]] ;
+			b = a.add( new Vector3D( product.x, product.y, product.z ) );
+			var c:Vector3D =  _points[_lineSegments[index+1][1]];
+			c.x = b.x ;
+			c.y = b.y ;
+			c.z = b.z ;
+			c.w = 1 ;
 			
-////		//	Rotate the camera around the current point
+			//	Rotate the camera around the current point
 			var angle:Number = 5 * RADIANS ;
 			var x:Number = _position.x ;
 			var z:Number = _position.z ;
 			_position.x = COSINE_RADIANS * x - SINE_RADIANS * z;
 			_position.z = COSINE_RADIANS * z + SINE_RADIANS * x;
 			_position.w = 1 ;
-			_camera.position.x = _position.x + v.x ;
+			_camera.position.x = _position.x + c.x ;
 			_camera.position.y = _position.y ;
-			_camera.position.z = _position.z + v.z ;
+			_camera.position.z = _position.z + c.z ;
 			_camera.position.w = 1 ;
 			
+			//	Create the world up vector 
+			//	Make sure that when it's crossed with the direction vector
+			//	the project is the y-vector
 			_worldUp = new Vector3D( -_position.z, 0, _position.x ) ;
 			_worldUp.normalize() ;
 			
-			//	Iterate over the confetti and compute their projections
-			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( v.x, v.y, v.z, 1), _worldUp ) ; 
+			//	Create the transformation matrices
+			var worldToView:Matrix4x4 = _camera.lookAt( new Vector3D( c.x, c.y, c.z, 1), _worldUp ) ; 
 			var projection:Matrix4x4 = _camera.perspective ;
 			var screenTransform:Matrix4x4 = _camera.getScreenTransformMatrix( ) ;
 			
 			//	Keep a collection of points we're transforming
 			var transformedPoints:Vector.<Vector3D> = new Vector.<Vector3D>( );
 			for ( var j:int = 0; j < _points.length; j++ )
-				transformedPoints.push( _points[j].clone() ) ;
+			{
+				transformedPoints.push( worldToView.transform( _points[j] )) ;
+			}
 			
 			//	Copy the line segments too
 			var transformedLineSegments:Vector.<Vector.<int>> = new Vector.<Vector.<int>>( );
@@ -240,28 +244,62 @@ package
 				lineSegment[1] = _lineSegments[j][1] ;
 				transformedLineSegments.push( lineSegment ) ;
 			}
+			
+			//	Make a look up table that keeps track of which
+			//	points have been transformed so we don't transform
+			//	duplicate points
+			var lut:Vector.<int> = new Vector.<int>( transformedPoints.length * 2, true ) ;
+			for ( j = 0; j < lut.length; j++ ) lut[j] = -1 ;
+			
 			//	Iterate over all the line segments
 			for ( j = 0; j < transformedLineSegments.length; j++ )
 			{
-				lineSegment = transformedLineSegments[j] ;
-//				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
-//					continue ;
-				
 				//	Grab the current line segment
+				lineSegment = transformedLineSegments[j] ;
+				
+				//	Grab the current line segment which has already
+				//	been transformed to view space
 				a = transformedPoints[lineSegment[0]] ;
 				b = transformedPoints[lineSegment[1]] ;
-				a = worldToView.transform( a );
-				b = worldToView.transform( b );
-				
+								
 				//	Clip the line segment a-b
-				var clip:Vector.<Vector3D> = 
-					_camera.clip( a, b  ) ;
+				var clip:Vector.<Vector3D> = _camera.clip( a, b ) ;
 				if ( clip != null )
 				{
-					lineSegment[0] = transformedPoints.push( a ) - 1 ;
-					lineSegment[1] = transformedPoints.push( b ) - 1 ;
+					//	If we haven't mapped the segment endpoint yet ...
+					if ( lut[lineSegment[0]] == -1 )
+					{
+						//	And the point was clipped ...
+						if ( a != clip[0] )
+						{
+							//	Map the current line segment's starting index to a new integer
+							//	which is the position of the newly clipped point in the array of
+							//	transformed points
+							lut[lineSegment[0]] = lineSegment[0] = transformedPoints.push( a ) - 1 ;
+						} else
+						{
+							//	Otherwise, map the start index of the line segment to the same point
+							lut[lineSegment[0]] = lineSegment[0] ;
+						}						
+					}
+						
+					//	If we haven't mapped the segment endpoint yet ...
+					if ( lut[lineSegment[1]] == -1 )
+					{
+						//	And the point was clipped ...
+						if ( b != clip[1] )
+						{
+							//	Map the current line segment's ending index to a new integer
+							//	which is the position of the newly clipped point in the array of
+							//	transformed points
+							lut[lineSegment[1]] = lineSegment[1] = transformedPoints.push( b ) - 1 ;
+						} else
+						{
+							//	Otherwise, map the end index of the line segment to the same point
+							lut[lineSegment[1]] = lineSegment[1] ;
+						}						
+					}
 				} else {
-					
 					lineSegment[0] = -1;
 					lineSegment[1] = -1;
 				}
@@ -269,9 +307,12 @@ package
 			
 			//	We're doing extra work here.  We have to come up
 			//	with a better data structure for this ...
-			for ( j = 0; j < transformedPoints.length; j++ )
+			for ( j = 0; j < lut.length; j++ )
 			{
-				a = transformedPoints[j] ;
+				var i:int = lut[j] ;
+				if ( i == -1 )
+					continue ;
+				a = transformedPoints[i] ;
 				a = projection.transform( a );
 				a.project();
 				a.w = 1 ;
@@ -286,7 +327,7 @@ package
 			//	The number of transformed points should always be even
 			graphics.clear(); 
 			graphics.lineStyle( undefined ) ;
-			for ( j = 0; j < transformedLineSegments.length; j++ )
+			for ( j = 2; j < transformedLineSegments.length; j++ )
 			{
 				lineSegment = transformedLineSegments[j] ;
 				if ( lineSegment[0] == -1 || lineSegment[1] == -1 )
@@ -296,7 +337,7 @@ package
 				a = transformedPoints[lineSegment[0]] ;
 				b = transformedPoints[lineSegment[1]] ;
 				
-				graphics.beginFill( 0x000000 );
+				graphics.beginFill( 0xff0000 );
 				graphics.drawCircle( a.x, a.y, 1 ) ;
 				graphics.drawCircle( b.x, b.y, 1 ) ;
 				graphics.endFill() ;
